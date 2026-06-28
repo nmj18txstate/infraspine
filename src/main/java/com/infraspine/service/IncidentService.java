@@ -26,7 +26,7 @@ public class IncidentService {
             var volume = volumes.get(pvc.volumeId());
             if (volume != null && isUsageAboveThreshold(volume)) {
                 incidents.add(new Incident("pvc-usage-" + pvc.id(), "PVC usage above 85%", RiskLevel.HIGH,
-                        "PersistentVolumeClaim", pvc.id(), pvc.name() + " is using " + usagePercent(volume) + "% of capacity."));
+                        "PersistentVolumeClaim", pvc.id(), pvc.name() + " is using " + formattedUsagePercent(volume) + "% of capacity."));
             }
         }
         for (var storageClass : topology.storageClasses()) {
@@ -124,5 +124,9 @@ public class IncidentService {
 
     private double usagePercent(StorageVolume volume) {
         return (volume.usedGiB() * 100.0) / volume.capacityGiB();
+    }
+
+    private String formattedUsagePercent(StorageVolume volume){
+        return String.format(Locale.ROOT, "%.1f", usagePercent(volume));
     }
 }

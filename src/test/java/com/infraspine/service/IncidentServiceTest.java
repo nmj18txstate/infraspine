@@ -48,4 +48,11 @@ class IncidentServiceTest {
         assertThat(report.affectedPvcs()).containsExactly("pvc-orders");
         assertThat(report.affectedVolumes()).containsExactly("vol-orders");
     }
+
+    @Test
+    void preservesDecimalUsageInIncidentReason() {
+        var incident = incidentService.incident("pvc-usage-pvc-orders").orElseThrow();
+
+        assertThat(incident.reason()).isEqualTo("orders-db-data is using 85.9% of capacity.");
+    }
 }

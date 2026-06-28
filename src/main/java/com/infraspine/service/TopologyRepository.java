@@ -18,7 +18,7 @@ public class TopologyRepository {
                 new StorageClassProfile("sc-fast", "fast-ssd", true, true, "zonal-replicated"),
                 new StorageClassProfile("sc-legacy", "legacy-hdd", false, false, "single-zone"));
         var volumes = List.of(
-                new StorageVolume("vol-orders", "orders-data", "sc-legacy", 100, 91, "node-a"),
+                new StorageVolume("vol-orders", "orders-data", "sc-legacy", 1000, 859, "node-a"),
                 new StorageVolume("vol-catalog", "catalog-cache", "sc-fast", 50, 20, "node-b"));
         var pvcs = List.of(
                 new PersistentVolumeClaim("pvc-orders", "orders-db-data", "commerce", "vol-orders", 100),
