@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class IncidentService {
+    private static final double PVC_USAGE_HIGH_RISK_THRESHOLD_PERCENT = 85.0;
+
     private final TopologyRepository repository;
 
     public IncidentService(TopologyRepository repository) {
@@ -93,11 +95,23 @@ public class IncidentService {
                     .forEach(affectedPvcs::add);
         }
         if (incident.resourceType().equals("StorageClassProfile")) {
-            topology.volumes().stream().filter(v -> v.storageClassId().equals(incident.resourceId())).map(StorageVolume::id).forEach(affectedVolumes::add);
+            topology.volumes().stream()
+                    .filter(volume -> volume.storageClassId().equals(incident.resourceId()))
+                    .map(StorageVolume::id)
+                    .forEach(affectedVolumes::add);
         }
-        topology.pvcs().stream().filter(pvc -> affectedVolumes.contains(pvc.volumeId())).map(PersistentVolumeClaim::id).forEach(affectedPvcs::add);
-        topology.pvcs().stream().filter(pvc -> affectedPvcs.contains(pvc.id())).map(PersistentVolumeClaim::volumeId).forEach(affectedVolumes::add);
-        topology.workloads().stream().filter(w -> w.pvcIds().stream().anyMatch(affectedPvcs::contains)).map(Workload::id).forEach(affectedWorkloads::add);
+        topology.pvcs().stream()
+                .filter(pvc -> affectedVolumes.contains(pvc.volumeId()))
+                .map(PersistentVolumeClaim::id)
+                .forEach(affectedPvcs::add);
+        topology.pvcs().stream()
+                .filter(pvc -> affectedPvcs.contains(pvc.id()))
+                .map(PersistentVolumeClaim::volumeId)
+                .forEach(affectedVolumes::add);
+        topology.workloads().stream()
+                .filter(workload -> workload.pvcIds().stream().anyMatch(affectedPvcs::contains))
+                .map(Workload::id)
+                .forEach(affectedWorkloads::add);
 
         return new BlastRadiusReport(incident.id(), incident.riskLevel(), List.copyOf(affectedWorkloads),
                 List.copyOf(affectedPvcs), List.copyOf(affectedVolumes),
@@ -105,16 +119,10 @@ public class IncidentService {
     }
 
     private boolean isUsageAboveThreshold(StorageVolume volume) {
-        if (volume.capacityGiB() <= 0) {
-            return false;
-        }
-        return volume.usedGiB() * 100 > volume.capacityGiB() * 85;
+        return usagePercent(volume) > PVC_USAGE_HIGH_RISK_THRESHOLD_PERCENT;
     }
 
-    private int usagePercent(StorageVolume volume) {
-        if (volume.capacityGiB() <= 0) {
-            return 0;
-        }
-        return Math.toIntExact((volume.usedGiB() * 100) / volume.capacityGiB());
+    private double usagePercent(StorageVolume volume) {
+        return (volume.usedGiB() * 100.0) / volume.capacityGiB();
     }
 }

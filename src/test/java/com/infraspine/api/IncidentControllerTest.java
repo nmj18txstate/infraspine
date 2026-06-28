@@ -5,8 +5,6 @@ import com.infraspine.service.TopologyRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -15,7 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {IncidentController.class, TopologyController.class})
-@Import(IncidentControllerTest.TestConfig.class)
+@Import({IncidentService.class, TopologyRepository.class})
 class IncidentControllerTest {
     @Autowired
     MockMvc mockMvc;
@@ -43,18 +41,5 @@ class IncidentControllerTest {
     void returnsNotFoundForUnknownIncident() throws Exception {
         mockMvc.perform(get("/api/incidents/unknown"))
                 .andExpect(status().isNotFound());
-    }
-
-    @Configuration
-    static class TestConfig {
-        @Bean
-        TopologyRepository topologyRepository() {
-            return new TopologyRepository();
-        }
-
-        @Bean
-        IncidentService incidentService(TopologyRepository repository) {
-            return new IncidentService(repository);
-        }
     }
 }
