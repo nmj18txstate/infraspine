@@ -22,7 +22,7 @@ public class IncidentService {
 
         for (var pvc : topology.pvcs()) {
             var volume = volumes.get(pvc.volumeId());
-            if (volume != null && usagePercent(volume) > 85) {
+            if (volume != null && isUsageAboveThreshold(volume)) {
                 incidents.add(new Incident("pvc-usage-" + pvc.id(), "PVC usage above 85%", RiskLevel.HIGH,
                         "PersistentVolumeClaim", pvc.id(), pvc.name() + " is using " + usagePercent(volume) + "% of capacity."));
             }
@@ -104,7 +104,17 @@ public class IncidentService {
                 "Potential impact includes " + affectedWorkloads.size() + " workload(s), " + affectedPvcs.size() + " PVC(s), and " + affectedVolumes.size() + " volume(s).");
     }
 
+    private boolean isUsageAboveThreshold(StorageVolume volume) {
+        if (volume.capacityGiB() <= 0) {
+            return false;
+        }
+        return volume.usedGiB() * 100 > volume.capacityGiB() * 85;
+    }
+
     private int usagePercent(StorageVolume volume) {
+        if (volume.capacityGiB() <= 0) {
+            return 0;
+        }
         return Math.toIntExact((volume.usedGiB() * 100) / volume.capacityGiB());
     }
 }
