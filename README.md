@@ -1,6 +1,6 @@
 # InfraSpine
 
-InfraSpine is a production-style Java/Spring Boot prototype for a self-healing infrastructure control plane and learning lab. The MVP focuses on helping JVM engineers reason about Kubernetes storage topology, incidents, blast radius, and safe remediation planning.
+InfraSpine is a hardware-aware production-style Java/Spring Boot prototype for a self-healing infrastructure control plane and learning lab. The MVP focuses on helping JVM engineers reason about Kubernetes storage topology, incidents, blast radius, and safe remediation planning.
 
 ## Current repository structure
 
