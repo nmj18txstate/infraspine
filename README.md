@@ -43,6 +43,11 @@ Endpoints:
 - `GET /api/incidents/{id}/blast-radius` returns impacted workloads, PVCs, and volumes.
 - `GET /api/incidents/{id}/remediation-plan` returns safe, educational remediation steps.
 
+## Examples
+
+- [Kubernetes Persistent Storage Walkthrough](docs/examples/kubernetes-persistent-storage-walkthrough.md)
+  This walkthrough explains the sample `orders-db` storage-risk scenario using an analogy, Mermaid topology diagram, REST API calls, real JSON outputs, gotchas, and Spring Boot reliability   mapping.
+  
 ## MVP rules
 
 InfraSpine currently evaluates these rules:
