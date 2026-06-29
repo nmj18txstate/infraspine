@@ -13,6 +13,7 @@ InfraSpine is a production-style Java/Spring Boot prototype for a self-healing i
 │   ├── domain                      # Immutable domain records
 │   └── service                     # In-memory topology and rule engine
 ├── src/test/java/com/infraspine    # Rule engine and REST API tests
+├── docs/examples                   # Walkthroughs and sample API outputs
 └── docs/skills                     # Draft JVM skill submissions
 ```
 
