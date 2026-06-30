@@ -146,12 +146,30 @@ public class StorageRiskEngine {
     }
 }
 ```
+Companion Spring configuration:
 
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
+
+@Configuration
+public class TimeConfiguration {
+
+    @Bean
+    Clock clock() {
+        return Clock.systemUTC();
+    }
+}
+```
+
+When agents recommend injecting `Clock` for deterministic tests, they must also add a production `Clock` bean or verify one already exists in the application context.
 Agents should check:
 
 * Controllers delegate to services.
 * Rule engines are unit tested directly.
-* Time is injectable through `Clock` when deterministic tests need it.
+* Time is injectable through `Clock` when deterministic tests need it, and a production `Clock` bean is defined.
 * Threshold values are explicit constants or configuration properties.
 * Rule methods are small enough to review and test independently.
 
