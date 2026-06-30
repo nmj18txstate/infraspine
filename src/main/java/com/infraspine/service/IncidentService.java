@@ -61,23 +61,41 @@ public class IncidentService {
     }
 
     public Optional<RemediationPlan> remediationPlan(String incidentId) {
-        return incident(incidentId).map(incident -> new RemediationPlan(incident.id(), switch (incident.resourceType()) {
-            case "PersistentVolumeClaim" -> List.of(
-                    "Confirm current application health and recent backup status before changing storage.",
-                    "Inspect PVC, filesystem, and application-level growth patterns.",
-                    "Expand the PVC if supported, or migrate to an expandable StorageClass during a maintenance window.",
-                    "Add alerts at 70%, 80%, and 85% usage thresholds.");
-            case "StorageClassProfile" -> List.of(
-                    "Review provider capabilities and validate whether snapshots and expansion are available.",
-                    "Create a safer replacement StorageClass with snapshot policy and expansion enabled.",
-                    "Migrate low-risk workloads first, then stateful production workloads with tested rollback steps.");
-            case "Workload" -> List.of(
-                    "Identify whether the workload is stateful and what consistency guarantees it needs.",
-                    "Add a tested backup target and document restore objectives.",
-                    "For stateful single replicas, evaluate replication, pod disruption budgets, and anti-affinity.",
-                    "Run a restore rehearsal before declaring the incident remediated.");
-            default -> List.of("Triage the resource, capture evidence, and prefer reversible changes.");
-        }));
+        return incident(incidentId).map(incident -> {
+            List<RemediationStep> steps;
+            boolean requiresDowntime;
+            switch (incident.resourceType()) {
+                case "PersistentVolumeClaim" -> {
+                    steps = List.of(
+                            new RemediationStep(1, "Confirm current application health and recent backup status before changing storage.", true, "None required for verification step."),
+                            new RemediationStep(2, "Inspect PVC, filesystem, and application-level growth patterns.", true, "None required."),
+                            new RemediationStep(3, "Expand the PVC if supported, or migrate to an expandable StorageClass during a maintenance window.", false, "PVC storage block allocations cannot be shrunk or reversed automatically; requires a manual downscale data migration workflow."),
+                            new RemediationStep(4, "Add alerts at 70%, 80%, and 85% usage thresholds.", true, "Remove alert rules from monitoring configuration."));
+                    requiresDowntime = true; //Migration adjustments require a maintenance window
+                }
+                case "StorageClassProfile" -> {
+                    steps = List.of(
+                            new RemediationStep(1, "Review provider capabilities and validate whether snapshots and expansion are available.", true, "None required."),
+                            new RemediationStep(2, "Create a safer replacement StorageClass with snapshot policy and expansion enabled.", true, "Delete standby StorageClass manifest configuration."),
+                            new RemediationStep(3, "Migrate low-risk workloads first, then stateful production workloads with tested rollback steps.", false, "Fail back to original storage configurations using pre-migration block backups."));
+                    requiresDowntime = true; //Storage class migration paths for active workloads require maintenance windows
+                }
+                case "Workload" -> {
+                    steps = List.of(
+                            new RemediationStep(1, "Identify whether the workload is stateful and what consistency guarantees it needs.", true, "None required."),
+                            new RemediationStep(2, "Add a tested backup target and document restore objectives.", true, "Deregister backup configuration targets."),
+                            new RemediationStep(3, "For stateful single replicas, evaluate replication, pod disruption budgets, and anti-affinity.", true, "Revert template state back to single replica status."),
+                            new RemediationStep(4, "Run a restore rehearsal before declaring the incident remediated.", true, "Tear down temporary verification staging namespace environments."));
+                    requiresDowntime = false; //Strategy adjustments can be scheduled as standard rolling infrastructure deployments
+                }
+                default -> {
+                    steps = List.of(
+                            new RemediationStep(1, "Triage the resource, capture evidence, and prefer reversible changes.", true, "Rollback strategy dependent on triaged resource context."));
+                    requiresDowntime = false;
+                }
+            }
+                    return new RemediationPlan(incident.id(), steps, requiresDowntime);
+        });
     }
 
     private BlastRadiusReport toBlastRadius(Incident incident) {
@@ -119,10 +137,14 @@ public class IncidentService {
     }
 
     private boolean isUsageAboveThreshold(StorageVolume volume) {
-        return usagePercent(volume) > PVC_USAGE_HIGH_RISK_THRESHOLD_PERCENT;
+        return volume.capacityGiB() > 0
+        && usagePercent(volume) > PVC_USAGE_HIGH_RISK_THRESHOLD_PERCENT;
     }
 
     private double usagePercent(StorageVolume volume) {
+        if(volume.capacityGiB() <= 0) {
+            return 0.0;
+        }
         return (volume.usedGiB() * 100.0) / volume.capacityGiB();
     }
 

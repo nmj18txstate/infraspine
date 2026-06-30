@@ -45,7 +45,8 @@ Endpoints:
 - `GET /api/incidents/{id}/remediation-plan` returns safe, educational remediation steps.
 
 ## Examples
-
+- [JVM Storage Architecture Walkthrough](docs/examples/jvm-storage-architecture-walkthrough.md)
+  This walkthrough explains how to model storage reliability inside a Java 21 / Spring Boot 3 application using thin REST controllers, immutable Java records, rule engine isolation, deterministic `Clock` injection, and backup-first remediation workflows.
 - [Kubernetes Persistent Storage Walkthrough](docs/examples/kubernetes-persistent-storage-walkthrough.md)
   This walkthrough explains the sample `orders-db` storage-risk scenario using an analogy, Mermaid topology diagram, REST API calls, real JSON outputs, gotchas, and Spring Boot reliability   mapping.
   

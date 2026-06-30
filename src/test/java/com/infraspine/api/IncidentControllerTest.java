@@ -34,7 +34,14 @@ class IncidentControllerTest {
 
         mockMvc.perform(get("/api/incidents/backup-target-wl-orders/remediation-plan"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.steps[0]").value("Identify whether the workload is stateful and what consistency guarantees it needs."));
+                .andExpect(jsonPath("$.incidentId").value("backup-target-wl-orders"))
+                // Drill down past the step object container into the explicit fields
+                .andExpect(jsonPath("$.steps[0].sequence").value(1))
+                .andExpect(jsonPath("$.steps[0].action").value("Identify whether the workload is stateful and what consistency guarantees it needs."))
+                .andExpect(jsonPath("$.steps[0].isReversible").value(true))
+                .andExpect(jsonPath("$.steps[0].rollbackStrategy").value("None required."))
+                // Assert our overall platform risk downtime flag
+                .andExpect(jsonPath("$.requiresDowntime").value(false));
     }
 
     @Test
@@ -43,3 +50,4 @@ class IncidentControllerTest {
                 .andExpect(status().isNotFound());
     }
 }
+
