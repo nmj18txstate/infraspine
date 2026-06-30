@@ -18,5 +18,9 @@ public final class Models {
                            List<PersistentVolumeClaim> pvcs, List<Workload> workloads) {}
     public record BlastRadiusReport(String incidentId, RiskLevel riskLevel, List<String> affectedWorkloads,
                                     List<String> affectedPvcs, List<String> affectedVolumes, String summary) {}
-    public record RemediationPlan(String incidentId, List<String> steps) {}
+    // Rich element modeling for sequential steps
+    public record RemediationStep(int sequence, String action, boolean isReversible, String rollbackStrategy) {}
+
+    // Updated to leverage structured steps and clear operational impact flags
+    public record RemediationPlan(String incidentId, List<RemediationStep> steps, boolean requiresDowntime) {}
 }

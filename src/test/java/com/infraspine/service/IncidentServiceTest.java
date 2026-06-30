@@ -55,4 +55,48 @@ class IncidentServiceTest {
 
         assertThat(incident.reason()).isEqualTo("orders-db-data is using 85.9% of capacity.");
     }
+
+    @Test
+    void generatesDowntimeRequiredRemediationPlanForPvcUsage() {
+        var plan = incidentService.remediationPlan("pvc-usage-pvc-orders").orElseThrow();
+        // Verify root-level structural details
+        assertThat(plan.incidentId()).isEqualTo("pvc-usage-pvc-orders");
+        assertThat(plan.requiresDowntime()).isTrue();
+        assertThat(plan.steps()).hasSize(4);
+        // Verify detailed, rich elements of the sequential steps
+        var firstStep = plan.steps().get(0);
+        assertThat(firstStep.sequence()).isEqualTo(1);
+        assertThat(firstStep.isReversible()).isTrue();
+        assertThat(firstStep.action()).contains("Confirm current application health and recent backup status");
+        var irreversibleStep = plan.steps().get(2);
+        assertThat(irreversibleStep.sequence()).isEqualTo(3);
+        assertThat(irreversibleStep.isReversible()).isFalse();
+        assertThat(irreversibleStep.rollbackStrategy()).contains("PVC storage block allocations cannot be shrunk");
+    }
+    @Test
+    void generatesZeroDowntimeRemediationPlanForWorkloadBackupRisk() {
+        var plan = incidentService.remediationPlan("backup-target-wl-orders").orElseThrow();
+        // Verify strategy-based changes do not flag unnecessary platform downtime
+        assertThat(plan.incidentId()).isEqualTo("backup-target-wl-orders");
+        assertThat(plan.requiresDowntime()).isFalse();
+        assertThat(plan.steps()).hasSize(4);
+        var backupStep = plan.steps().get(1);
+        assertThat(backupStep.sequence()).isEqualTo(2);
+        assertThat(backupStep.isReversible()).isTrue();
+        assertThat(backupStep.rollbackStrategy()).isEqualTo("Deregister backup configuration targets.");
+    }
+
+    @Test
+    void buildsStructuredRemediationPlanForWorkloadRisk() {
+        var plan = incidentService.remediationPlan("backup-target-wl-orders").orElseThrow();
+
+        assertThat(plan.incidentId()).isEqualTo("backup-target-wl-orders");
+        assertThat(plan.requiresDowntime()).isFalse();
+        assertThat(plan.steps()).hasSize(4);
+        assertThat(plan.steps().getFirst().sequence()).isEqualTo(1);
+        assertThat(plan.steps().getFirst().action())
+                .isEqualTo("Identify whether the workload is stateful and what consistency guarantees it needs.");
+        assertThat(plan.steps().getFirst().isReversible()).isTrue();
+        assertThat(plan.steps().getFirst().rollbackStrategy()).isEqualTo("None required.");
+    }
 }

@@ -158,11 +158,32 @@ Response:
 {
   "incidentId": "backup-target-wl-orders",
   "steps": [
-    "Identify whether the workload is stateful and what consistency guarantees it needs.",
-    "Add a tested backup target and document restore objectives.",
-    "For stateful single replicas, evaluate replication, pod disruption budgets, and anti-affinity.",
-    "Run a restore rehearsal before declaring the incident remediated."
-  ]
+    {
+      "sequence": 1,
+      "action": "Identify whether the workload is stateful and what consistency guarantees it needs.",
+      "isReversible": true,
+      "rollbackStrategy": "None required."
+    },
+    {
+      "sequence": 2,
+      "action": "Add a tested backup target and document restore objectives.",
+      "isReversible": true,
+      "rollbackStrategy": "Deregister backup configuration targets."
+    },
+    {
+      "sequence": 3,
+      "action": "For stateful single replicas, evaluate replication, pod disruption budgets, and anti-affinity.",
+      "isReversible": true,
+      "rollbackStrategy": "Revert template state back to single replica status."
+    },
+    {
+      "sequence": 4,
+      "action": "Run a restore rehearsal before declaring the incident remediated.",
+      "isReversible": true,
+      "rollbackStrategy": "Tear down temporary verification staging namespace environments."
+    }
+  ],
+  "requiresDowntime": false
 }
 ```
 
